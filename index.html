@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spinning Wheel</title>
+    <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-brand" id="app-title" contenteditable="true" title="Click to edit wheel name">Spinning Wheel</div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-view="race" title="Race (1)">
+                    <span class="tab-label">Race</span>
+                </button>
+                <button class="nav-tab" data-view="users" title="Users (2)">
+                    <span class="tab-label">Users</span>
+                </button>
+                <button class="nav-tab" data-view="history" title="History (3)">
+                    <span class="tab-label">History</span>
+                </button>
+                <button class="nav-tab" data-view="settings" title="Settings (4)">
+                    <span class="tab-label">Settings</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Welcome Screen (shown on first visit) -->
+            <div id="welcome-view" class="view active">
+                <div class="welcome-container">
+                    <h1>Welcome to Horse Racing</h1>
+                    <p>Randomly select team members with an exciting horse race.</p>
+                    <p>Get started by adding team members below:</p>
+
+                    <div class="welcome-examples">
+                        <h3>Example Team Members:</h3>
+                        <ul>
+                            <li>Alice</li>
+                            <li>Bob</li>
+                            <li>Charlie</li>
+                        </ul>
+                        <p>You can customize with your own names!</p>
+                    </div>
+
+                    <div class="welcome-actions">
+                        <button id="welcome-go-to-users" class="btn btn-primary">Get Started</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Race View -->
+            <div id="race-view" class="view">
+                <div id="result-display" class="result-display hidden">
+                    <span id="result-name" class="result-name"></span>
+                </div>
+
+                <div class="race-container">
+                    <svg id="race-track" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
+                        <g id="lanes"></g>
+                        <line id="finish-line" x1="950" y1="0" x2="950" y2="600"
+                              stroke="#FFD700" stroke-width="8" stroke-dasharray="20,10"/>
+                        <g id="horses"></g>
+                    </svg>
+                </div>
+
+                <div class="race-controls">
+                    <button id="race-button" class="btn btn-primary" title="Start the race (Enter or Space)">Start Race</button>
+                </div>
+            </div>
+
+            <!-- Users View -->
+            <div id="users-view" class="view">
+                <div class="users-container">
+                    <h2>Manage Users</h2>
+
+                    <div class="user-form">
+                        <h3>Add New User</h3>
+                        <div class="form-group">
+                            <label for="user-name-input">Name (2-15 characters):</label>
+                            <input
+                                id="user-name-input"
+                                type="text"
+                                placeholder="Enter name"
+                                maxlength="15"
+                                title="Name must be 2-15 characters"
+                            >
+                            <div id="name-error" class="error-message"></div>
+                        </div>
+
+                        <button id="add-user-btn" class="btn btn-primary">Add User</button>
+                    </div>
+
+                    <div class="users-list">
+                        <h3>Current Users (<span id="user-count">0</span>/20)</h3>
+                        <div id="users-grid" class="users-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History View -->
+            <div id="history-view" class="view">
+                <div class="history-container">
+                    <h2>Spin History & Statistics</h2>
+
+                    <div class="history-tabs">
+                        <button class="history-tab active" data-tab="history-list" title="View all spins">History</button>
+                        <button class="history-tab" data-tab="statistics" title="View statistics">Statistics</button>
+                    </div>
+
+                    <!-- History List Tab -->
+                    <div id="history-list" class="history-tab-content active">
+                        <div class="history-actions">
+                            <button id="export-csv" class="btn btn-secondary">Export CSV</button>
+                            <button id="clear-history" class="btn btn-danger">Clear History</button>
+                        </div>
+                        <div id="history-entries" class="history-entries"></div>
+                    </div>
+
+                    <!-- Statistics Tab -->
+                    <div id="statistics" class="history-tab-content">
+                        <div id="statistics-content" class="statistics-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="view">
+                <div class="settings-container">
+                    <h2>Settings</h2>
+
+                    <div class="settings-section">
+                        <h3>Race Options</h3>
+
+                        <div class="form-group">
+                            <label for="spin-duration-slider">Race Duration: <span id="duration-display">7</span> seconds</label>
+                            <input
+                                id="spin-duration-slider"
+                                type="range"
+                                min="5"
+                                max="20"
+                                value="7"
+                                title="Adjust race duration"
+                            >
+                            <div class="slider-labels">
+                                <span>5s</span>
+                                <span>20s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Race Track Appearance</h3>
+
+                        <div class="form-group">
+                            <label for="app-title-input">Race Name:</label>
+                            <input
+                                id="app-title-input"
+                                type="text"
+                                placeholder="Spinning Wheel"
+                                maxlength="50"
+                                title="Name displayed in the navbar"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="winner-effect">Winner Effect:</label>
+                            <select id="winner-effect" title="Choose a celebration effect">
+                                <option value="none">None</option>
+                                <option value="glow">Subtle Glow Pulse</option>
+                                <option value="confetti">Confetti Burst</option>
+                                <option value="balloons">Balloons Rise</option>
+                                <option value="sparkles">Sparkles</option>
+                                <option value="fireworks">Fireworks</option>
+                                <option value="rainbow">Rainbow Flash</option>
+                                <option value="bounce">Bounce Animation</option>
+                                <option value="lightshow">Light Show</option>
+                                <option value="tickertape">Ticker Tape</option>
+                                <option value="screenflash">Screen Flash</option>
+                                <option value="popup">Winner Popup</option>
+                                <option value="celebration">Celebration Pack (All Effects)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Theme & Sound</h3>
+
+                        <div class="form-group">
+                            <label>
+                                <input id="dark-mode-toggle" type="checkbox" title="Toggle dark mode">
+                                Dark Mode
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input id="sound-toggle" type="checkbox" checked title="Toggle sound effects">
+                                Sound Effects
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Data Management</h3>
+
+                        <div class="form-group">
+                            <button id="download-data" class="btn btn-secondary">Download All Data (JSON)</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="upload-data-input">Upload Data from JSON File:</label>
+                            <input type="file" id="upload-data-input" accept=".json" style="display: none;">
+                            <button id="upload-data-btn" class="btn btn-secondary">Choose File & Upload</button>
+                        </div>
+
+                        <div class="form-group">
+                            <button id="reset-app" class="btn btn-danger">Reset Everything</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Help/FAQ Modal -->
+    <div id="help-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Help & FAQ</h2>
+                <button id="close-help" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="faq-section">
+                    <h3>How to Add Users</h3>
+                    <p>Go to the Users tab, enter a name (2-15 characters), select a color from the palette or custom color picker, and click "Add User". You need at least 2 users to spin.</p>
+                </div>
+                <div class="faq-section">
+                    <h3>How to Race</h3>
+                    <p>Go to the Race tab and click the "Start Race" button, or press Enter/Space. The horses will race and randomly select a winner. Press 1 to quickly navigate to the Race tab.</p>
+                </div>
+                <div class="faq-section">
+                    <h3>Keyboard Shortcuts</h3>
+                    <ul>
+                        <li><strong>1</strong> - Go to Race</li>
+                        <li><strong>2</strong> - Go to Users</li>
+                        <li><strong>3</strong> - Go to History</li>
+                        <li><strong>4</strong> - Go to Settings</li>
+                        <li><strong>Arrow Keys</strong> - Switch tabs</li>
+                        <li><strong>Enter/Space</strong> - Start race</li>
+                    </ul>
+                </div>
+                <div class="faq-section">
+                    <h3>View History & Statistics</h3>
+                    <p>Go to the History tab to see all previous spins. The Statistics tab shows win counts, selection percentages, and streaks for each user.</p>
+                </div>
+                <div class="faq-section">
+                    <h3>Export Data</h3>
+                    <p>In the History tab, click "Export CSV" to download your spin history in spreadsheet format.</p>
+                </div>
+                <div class="faq-section">
+                    <h3>Share Your Wheel</h3>
+                    <p>In Settings, click "Generate Shareable Link" to create a link that includes your current users, colors, and settings. Recipients will be asked before the data loads.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit User</h2>
+                <button id="close-edit-user" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit-user-name">Name (2-15 characters):</label>
+                    <input
+                        id="edit-user-name"
+                        type="text"
+                        placeholder="Enter name"
+                        maxlength="15"
+                        title="Name must be 2-15 characters"
+                    >
+                    <div id="edit-name-error" class="error-message"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-color-palette">Color Palette:</label>
+                    <div id="edit-color-palette" class="color-palette"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-custom-color">Custom Color:</label>
+                    <input
+                        id="edit-custom-color"
+                        type="color"
+                        title="Choose a custom color"
+                    >
+                    <div id="edit-color-preview" class="color-preview"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="edit-user-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="edit-user-save" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirm-dialog" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="confirm-title">Confirm Action</h2>
+                <button id="close-confirm" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="confirm-ok" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/js/storage.js"></script>
+    <script src="src/js/sounds.js"></script>
+    <script src="src/js/effects.js"></script>
+    <script src="src/js/race.js"></script>
+    <script src="src/js/app.js"></script>
+</body>
+</html>
