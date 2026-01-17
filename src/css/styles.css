@@ -976,18 +976,23 @@ input[type="checkbox"] {
         flex-direction: column;
         gap: var(--spacing-md);
         padding: var(--spacing-md);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
     }
 
     .nav-tabs {
         width: 100%;
         overflow-x: auto;
+        display: flex;
     }
 
     .nav-tab {
-        font-size: 12px;
-        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 13px;
+        padding: var(--spacing-sm) var(--spacing-md);
         flex: 1;
         text-align: center;
+        white-space: nowrap;
     }
 
     .main-content {
@@ -1031,16 +1036,25 @@ input[type="checkbox"] {
         font-size: 14px;
     }
 
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
     .nav-brand {
         font-size: 18px;
     }
 
     .nav-tabs {
         gap: var(--spacing-xs);
+        justify-content: space-around;
     }
 
     .nav-tab {
-        padding: var(--spacing-xs) var(--spacing-xs);
+        padding: var(--spacing-sm) var(--spacing-xs);
+        min-width: 50px;
+        font-size: 20px;
     }
 
     .tab-label {
@@ -1049,6 +1063,7 @@ input[type="checkbox"] {
 
     .nav-tab::before {
         content: attr(data-icon);
+        font-size: 24px;
     }
 
     nav[data-view="wheel"]::before { content: "⚙"; }
