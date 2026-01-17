@@ -395,7 +395,7 @@ const Race = {
         Storage.addSpinEntry(this.selectedUser.id, this.selectedUser.name);
 
         // Update browser tab title with winner
-        const appTitle = Storage.getSetting('appTitle') || 'Horse Racing';
+        const appTitle = Storage.getSetting('appTitle') || 'Team Horse Racing';
         document.title = `${this.selectedUser.name} | ${appTitle}`;
 
         // Call completion callback with result

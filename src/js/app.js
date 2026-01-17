@@ -97,7 +97,7 @@ const App = {
         if (viewName === 'settings') {
             const appTitleInput = document.getElementById('app-title-input');
             if (appTitleInput) {
-                appTitleInput.value = Storage.getSetting('appTitle') || 'Spinning Wheel';
+                appTitleInput.value = Storage.getSetting('appTitle') || 'Team Horse Racing';
             }
         }
     },
@@ -109,7 +109,7 @@ const App = {
         const appTitle = document.getElementById('app-title');
 
         // Load saved title or use default
-        const savedTitle = Storage.getSetting('appTitle') || 'Spinning Wheel';
+        const savedTitle = Storage.getSetting('appTitle') || 'Team Horse Racing';
         appTitle.textContent = savedTitle;
         // Set initial browser tab title
         document.title = savedTitle;
@@ -119,7 +119,7 @@ const App = {
             let title = appTitle.textContent.trim();
             // Prevent empty title
             if (!title) {
-                title = 'Spinning Wheel';
+                title = 'Team Horse Racing';
                 appTitle.textContent = title;
             }
             Storage.setSetting('appTitle', title);
@@ -713,7 +713,7 @@ const App = {
         // Load current settings
         const settings = Storage.getSettings();
         spinDurationSlider.value = settings.spinDuration;
-        appTitleInput.value = Storage.getSetting('appTitle') || 'Spinning Wheel';
+        appTitleInput.value = Storage.getSetting('appTitle') || 'Team Horse Racing';
         winnerEffect.value = settings.winnerEffect;
         darkModeToggle.checked = settings.darkMode;
         soundToggle.checked = settings.soundEnabled;
@@ -729,7 +729,7 @@ const App = {
         appTitleInput.addEventListener('input', (e) => {
             let title = e.target.value.trim();
             if (!title) {
-                title = 'Spinning Wheel';
+                title = 'Team Horse Racing';
             }
             Storage.setSetting('appTitle', title);
             // Update the navbar title immediately

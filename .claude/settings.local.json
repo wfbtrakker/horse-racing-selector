@@ -9,7 +9,9 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate CLAUDE.md to reflect current application state\n\n- Document auto-color assignment \\(22-color palette\\)\n- Add enable/disable users functionality\n- Update data management section \\(import/export JSON\\)\n- Document compact history layout\n- Add editable wheel name feature\n- Update navigation and settings sections\n- Revise acceptance criteria for new features\n- Remove outdated sharing functionality references\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(timeout:*)",
       "Bash(npx http-server -p 8000)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo view:*)"
     ]
   }
 }
