@@ -108,7 +108,7 @@ This project can be easily hosted for free using GitHub Pages.
 The app is a **multi-view single-page application** with navigation between different sections:
 - **Wheel View**: Main spin interface
 - **User Management View**: Add/edit/delete names and colors
-- **History View**: List of previous spins
+- **History View**: List of previous races (labeled "Race History & Statistics")
 - **Settings View**: Configurable options and theme
 
 ### HTML Structure (index.html)
@@ -140,11 +140,13 @@ The app is a **multi-view single-page application** with navigation between diff
 - **Touch Support**: Handle swipe gestures on mobile
 
 **storage.js - Data Persistence**
+- **Namespace**: All data stored under single 'RacingWinner' localStorage key
 - Load/save user names and colors to localStorage
-- Load/save spin history to localStorage
+- Load/save race history to localStorage
 - Load/save settings to localStorage
-- Export history to CSV/JSON
+- Export history to CSV/JSON (labeled as "Race History")
 - Clear history or reset entire app
+- Helper methods: `_getNamespaceData()`, `_setNamespaceData()`, `_getNamespaceKey()`, `_setNamespaceKey()`
 
 **sounds.js - Audio Management**
 - Play spinning sound (looped during spin)
@@ -181,6 +183,7 @@ The app is a **multi-view single-page application** with navigation between diff
 - **Arrow Keys**: Left/Right arrows cycle through tabs
 - **Mnemonic Shortcuts**: Alt+H for History (and similar)
 - **Tab Navigation**: Full keyboard navigation through form fields
+- **Smart Input Detection**: Shortcuts automatically disabled when typing in input fields, textareas, or contenteditable elements to prevent interference
 
 ### Spin Control
 - **Enter or Space**: Trigger spin when Wheel view is active or spin button is focused
@@ -239,6 +242,12 @@ When the wheel stops, JavaScript calculates which slice is at the top (or design
   - (No fade-out animation on delete)
 - **Compact Layout**:
   - Reduced vertical spacing in add user form (8px between input and button)
+- **Mobile Layout** (≤768px):
+  - User cards use flex-wrap for multi-row layout
+  - Row 1: Username (full width)
+  - Row 2: Color swatch (left, 25px × 25px), enabled checkbox (right), edit/delete buttons (right)
+  - Checkbox and buttons right-justified and grouped together
+  - Enabled checkbox as direct sibling of user-card for proper ordering
 
 ### Spin Mechanics
 - **Spin Duration**:
@@ -294,27 +303,32 @@ When the wheel stops:
 7. **Effect Clearing**:
    - Winner effects automatically cleared when switching to other views
 
-### Selection History View
+### Race History View
 - Separate page/view accessible via top navigation
-- Display complete list of all spins in reverse chronological order (newest first)
-- **Compact Horizontal Layout**:
-  - All data on single line per entry: Spin #, Date/Time, User Name
+- Labeled as "Race History & Statistics" (not "Spin History")
+- Display complete list of all races in reverse chronological order (newest first)
+- **Desktop Horizontal Layout**:
+  - All data on single line per entry: Race #, Date/Time, User Name
   - Reduced vertical spacing (8px between entries)
   - Smaller padding for compact display
   - Consistent alignment with minimum widths for columns
-- Show for each entry: spin number, timestamp (date + time), selected user name
-- **History Limit**: Keep a rolling window of last 500 spins (oldest automatically removed when limit exceeded)
+- **Mobile Layout** (≤768px):
+  - Row 1: Race # and Date/Time (on same line)
+  - Row 2: User Name (full width below, prevents cutoff)
+  - Uses flex-wrap with proper ordering
+- Show for each entry: race number, timestamp (date + time), selected user name
+- **History Limit**: Keep a rolling window of last 500 races (oldest automatically removed when limit exceeded)
 - Persistence: Stored in localStorage across sessions
-- Export to CSV functionality available
+- Export to CSV functionality (filename: `race-history-YYYY-MM-DD.csv`, header: "Race #")
 
 ### Statistics View (Part of History View)
-Displays analysis of spin results:
+Displays analysis of race results:
 - **Win Count Per User**: Total number of times each user was selected (leaderboard style)
-- **Selection Percentage**: Show percentage of total spins for each user
+- **Selection Percentage**: Show percentage of total races for each user
 - **Streak Tracking**:
   - Current streak for each user (consecutive wins)
   - Longest streak achieved for each user
-- Updates in real-time as new spins are recorded
+- Updates in real-time as new races are recorded
 - Stored in localStorage for persistence
 
 ### Settings/Options View
@@ -331,11 +345,12 @@ Displays analysis of spin results:
   - Light/Dark theme toggle
   - Sound effects toggle (on/off)
 - **Data Management**:
-  - **Download All Data (JSON)**: Export complete backup of users, history, settings
+  - **Download All Data (JSON)**: Export complete backup of users, history, settings (filename: `race-data-YYYY-MM-DD.json`)
   - **Upload Data (JSON)**: Import backup file with confirmation prompt
-  - Clear History button (deletes spins, keeps users)
+  - Clear History button (deletes races, keeps users)
   - Reset App button (clears everything: users, colors, history, settings)
-  - All data persists in localStorage
+  - All data persists in localStorage under 'RacingWinner' namespace
+  - All buttons have consistent width (100%, max 300px) for visual alignment
 - **View Memory**:
   - Remember last viewed section (Wheel, Users, History, Settings)
   - Return to that view on page reload
@@ -380,10 +395,13 @@ Displays analysis of spin results:
   - FAQ for common questions
 
 ### Data Persistence (localStorage)
+- **Storage Namespace**: All data stored under single 'RacingWinner' key in localStorage
 - User names and assigned colors
-- Complete spin history (timestamp + selected user)
+- Complete race history (timestamp + selected user)
 - Current settings (spin duration, sound, theme, animation speed)
 - Welcome screen flag (to show/hide on future visits)
+- Last selected user (for preventing consecutive repeats)
+- Last viewed section (for view persistence)
 
 ### Offline Support
 - **Full offline capability**: App works completely without internet connection
@@ -401,7 +419,8 @@ Displays analysis of spin results:
 
 ### Accessibility
 - **Keyboard Navigation**: Full tab navigation through all form fields
-- **Keyboard Shortcuts**: Enter/Space to spin
+- **Keyboard Shortcuts**: Enter/Space to spin, number keys for navigation, arrow keys for tab switching
+- **Smart Input Detection**: Keyboard shortcuts automatically disabled when typing in input fields to prevent interference
 - Form labels and error messages for validation
 - Sufficient color contrast in both light and dark modes
 - **Note**: Full ARIA/screen reader support not a priority; focus is on keyboard and mouse usability
@@ -448,12 +467,14 @@ If sound files are not available locally, the app should gracefully degrade (no 
   - Winner effects cleared when switching views
 - **History & Statistics:**
   - Separate History view in top navigation
-  - **Compact horizontal layout** (all data on one line per entry)
-  - Rolling 500-spin history limit
+  - Labeled "Race History & Statistics"
+  - **Desktop layout**: Compact horizontal (all data on one line per entry: Race #, Date/Time, Name)
+  - **Mobile layout**: Race # and Date/Time on row 1, Name on row 2 (prevents cutoff)
+  - Rolling 500-race history limit
   - Win count per user
   - Selection percentage
   - Streak tracking (current and longest)
-  - CSV export capability
+  - CSV export capability (filename: race-history-YYYY-MM-DD.csv)
   - Delete history option
   - Reset app option
 - **Navigation:**
@@ -502,19 +523,24 @@ If sound files are not available locally, the app should gracefully degrade (no 
 - **Enable/disable functionality** for users (disabled users excluded from wheel)
 - Minimum 2 enabled users required to spin; maximum 20 users supported
 - Spin duration configurable 1-10 seconds (default: 7)
-- History limited to rolling 500 spins
-- **Compact history layout** with all data on single horizontal line
+- History limited to rolling 500 races
+- **Desktop history layout**: All data on single horizontal line (Race #, Date/Time, Name)
+- **Mobile history layout**: Race # and Date/Time on row 1, Name on row 2 (prevents cutoff)
+- **Mobile user cards**: Username on row 1, color/checkbox/buttons on row 2 (25px color swatch)
 - Statistics accurate (win counts, percentages, streaks)
-- All data persists in localStorage
+- All data persists in localStorage under 'RacingWinner' namespace
 - **Data import/export** via JSON files with confirmation prompts
+- Export filenames use "race" terminology (race-history-YYYY-MM-DD.csv, race-data-YYYY-MM-DD.json)
 - **Editable wheel name** in navbar syncs to browser tab and settings
 - App works on desktop and mobile devices
+- **Keyboard shortcuts** don't interfere when typing in input fields
 - Full keyboard and touch interaction support
 - Works on latest browser versions
 - Full offline functionality with no external dependencies
 - Browser tab title reflects winner name
 - Long names truncated with ellipsis in slices
 - New users fade in when added
-- Deleted users preserved in history
+- Deleted users preserved in history (shown as "Deleted User")
 - Winner effects cleared when switching views
 - Compact UI with reduced spacing
+- Data management buttons have consistent width (300px max)
