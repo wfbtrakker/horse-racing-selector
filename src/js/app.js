@@ -377,7 +377,9 @@ const App = {
             nameDiv.className = 'user-name';
             nameDiv.textContent = user.name;
 
-            // Add enabled/disabled checkbox
+            infoDiv.appendChild(nameDiv);
+
+            // Add enabled/disabled checkbox (as sibling to user-info for better mobile layout)
             const checkboxContainer = document.createElement('label');
             checkboxContainer.className = 'user-enabled-toggle';
 
@@ -396,9 +398,6 @@ const App = {
 
             checkboxContainer.appendChild(checkbox);
             checkboxContainer.appendChild(checkboxLabel);
-
-            infoDiv.appendChild(nameDiv);
-            infoDiv.appendChild(checkboxContainer);
 
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'user-actions';
@@ -422,6 +421,7 @@ const App = {
 
             card.appendChild(colorDiv);
             card.appendChild(infoDiv);
+            card.appendChild(checkboxContainer);
             card.appendChild(actionsDiv);
 
             usersGrid.appendChild(card);
@@ -564,7 +564,7 @@ const App = {
     confirmDeleteUser(user) {
         this.showConfirmDialog(
             `Delete "${user.name}"?`,
-            `This user will be removed from the wheel. Spin history will be preserved.`,
+            `This user will be removed from the wheel. Race history will be preserved.`,
             () => {
                 Storage.deleteUser(user.id);
                 this.renderUsersList();
@@ -605,7 +605,7 @@ const App = {
         document.getElementById('clear-history').addEventListener('click', () => {
             this.showConfirmDialog(
                 'Clear History?',
-                'All spin history will be deleted. This cannot be undone.',
+                'All race history will be deleted. This cannot be undone.',
                 () => {
                     Storage.clearHistory();
                     this.renderHistoryList();
@@ -639,7 +639,7 @@ const App = {
             entryDiv.className = 'history-entry';
 
             entryDiv.innerHTML = `
-                <span class="history-entry-number">Spin #${entry.spinNumber}</span>
+                <span class="history-entry-number">Race #${entry.spinNumber}</span>
                 <span class="history-entry-time">${dateStr} ${timeStr}</span>
                 <span class="history-entry-name">${entry.userName}</span>
             `;
@@ -835,6 +835,18 @@ const App = {
      */
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
+            // Ignore shortcuts when user is typing in input fields
+            const activeElement = document.activeElement;
+            const isTyping = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.isContentEditable
+            );
+
+            if (isTyping) {
+                return; // Don't process shortcuts while typing
+            }
+
             // Number keys for navigation
             const number = parseInt(e.key);
             if (number >= 1 && number <= 4) {

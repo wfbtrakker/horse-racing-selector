@@ -621,7 +621,7 @@ input[type="checkbox"] {
     font-size: 14px;
     color: var(--text-secondary);
     cursor: pointer;
-    margin-top: var(--spacing-xs);
+    flex-shrink: 0;
 }
 
 .user-enabled-toggle input[type="checkbox"] {
@@ -806,6 +806,12 @@ input[type="checkbox"] {
 .settings-section h3 {
     margin-bottom: var(--spacing-md);
     color: var(--primary-color);
+}
+
+/* Data management buttons - ensure consistent width */
+.settings-section .btn {
+    width: 100%;
+    max-width: 300px;
 }
 
 #shared-link-display {
@@ -1011,6 +1017,48 @@ input[type="checkbox"] {
         grid-template-columns: 1fr;
     }
 
+    /* Mobile layout for user cards - username on top, controls below */
+    .user-card {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .user-info {
+        order: -1;
+        flex-basis: 100%;
+        width: 100%;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .user-name {
+        font-size: 16px;
+        margin-bottom: 0;
+    }
+
+    .user-color {
+        order: 0;
+        flex-shrink: 0;
+        width: 25px;
+        height: 25px;
+    }
+
+    .user-enabled-toggle {
+        order: 1;
+        flex-shrink: 0;
+        margin-left: auto;
+        margin-right: var(--spacing-sm);
+    }
+
+    .user-actions {
+        order: 2;
+        flex-shrink: 0;
+    }
+
+    .user-actions button {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 12px;
+    }
+
     .result-display .btn {
         display: block;
         width: 100%;
@@ -1021,13 +1069,30 @@ input[type="checkbox"] {
         flex-direction: column;
     }
 
-    .user-actions {
-        flex-direction: column;
-        width: 100%;
+    /* Mobile layout for history entries - name on separate row */
+    .history-entry {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
     }
 
-    .user-actions button {
+    .history-entry-number {
+        order: 0;
+        min-width: auto;
+        flex: 0 0 auto;
+    }
+
+    .history-entry-time {
+        order: 1;
+        min-width: auto;
+        flex: 1 1 auto;
+    }
+
+    .history-entry-name {
+        order: 2;
+        flex-basis: 100%;
         width: 100%;
+        margin-top: var(--spacing-xs);
+        padding-left: 0;
     }
 }
 

@@ -1,17 +1,21 @@
 /**
  * Storage Module - Manages all localStorage operations
  * Handles: users, colors, history, settings, and data persistence
+ * All data is stored under a single 'RacingWinner' namespace in localStorage
  */
 
 const Storage = {
-    // Storage keys
+    // Namespace for all localStorage data
+    NAMESPACE: 'RacingWinner',
+
+    // Storage keys (used internally within the namespace)
     STORAGE_KEYS: {
-        USERS: 'wheel_users',
-        HISTORY: 'wheel_history',
-        SETTINGS: 'wheel_settings',
-        LAST_VIEW: 'wheel_last_view',
-        FIRST_VISIT: 'wheel_first_visit',
-        LAST_SELECTED: 'wheel_last_selected'
+        USERS: 'users',
+        HISTORY: 'history',
+        SETTINGS: 'settings',
+        LAST_VIEW: 'lastView',
+        FIRST_VISIT: 'firstVisit',
+        LAST_SELECTED: 'lastSelected'
     },
 
     // Default settings
@@ -33,11 +37,53 @@ const Storage = {
     ],
 
     /**
+     * Get the entire namespace data object from localStorage
+     */
+    _getNamespaceData() {
+        try {
+            const data = localStorage.getItem(this.NAMESPACE);
+            return data ? JSON.parse(data) : {};
+        } catch (e) {
+            console.error('Error loading namespace data:', e);
+            return {};
+        }
+    },
+
+    /**
+     * Save the entire namespace data object to localStorage
+     */
+    _setNamespaceData(data) {
+        try {
+            localStorage.setItem(this.NAMESPACE, JSON.stringify(data));
+        } catch (e) {
+            console.error('Error saving namespace data:', e);
+        }
+    },
+
+    /**
+     * Get a specific key from the namespace
+     */
+    _getNamespaceKey(key) {
+        const data = this._getNamespaceData();
+        return data[key];
+    },
+
+    /**
+     * Set a specific key in the namespace
+     */
+    _setNamespaceKey(key, value) {
+        const data = this._getNamespaceData();
+        data[key] = value;
+        this._setNamespaceData(data);
+    },
+
+    /**
      * Initialize storage - set up first visit flag
      */
     init() {
-        if (!localStorage.getItem(this.STORAGE_KEYS.FIRST_VISIT)) {
-            localStorage.setItem(this.STORAGE_KEYS.FIRST_VISIT, 'false');
+        const firstVisit = this._getNamespaceKey(this.STORAGE_KEYS.FIRST_VISIT);
+        if (firstVisit === undefined) {
+            this._setNamespaceKey(this.STORAGE_KEYS.FIRST_VISIT, 'false');
         }
     },
 
@@ -45,7 +91,7 @@ const Storage = {
      * Check if this is the first visit
      */
     isFirstVisit() {
-        return localStorage.getItem(this.STORAGE_KEYS.FIRST_VISIT) === 'false' &&
+        return this._getNamespaceKey(this.STORAGE_KEYS.FIRST_VISIT) === 'false' &&
             this.getUsers().length === 0;
     },
 
@@ -53,7 +99,7 @@ const Storage = {
      * Mark as not first visit
      */
     markFirstVisitDone() {
-        localStorage.setItem(this.STORAGE_KEYS.FIRST_VISIT, 'true');
+        this._setNamespaceKey(this.STORAGE_KEYS.FIRST_VISIT, 'true');
     },
 
     // ==================== USERS ====================
@@ -63,8 +109,8 @@ const Storage = {
      */
     getUsers() {
         try {
-            const users = localStorage.getItem(this.STORAGE_KEYS.USERS);
-            const parsedUsers = users ? JSON.parse(users) : [];
+            const users = this._getNamespaceKey(this.STORAGE_KEYS.USERS);
+            const parsedUsers = users ? users : [];
             // Ensure all users have an enabled property (default to true for existing users)
             return parsedUsers.map(user => ({
                 ...user,
@@ -89,7 +135,7 @@ const Storage = {
             createdAt: new Date().toISOString()
         };
         users.push(user);
-        localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify(users));
+        this._setNamespaceKey(this.STORAGE_KEYS.USERS, users);
         return user;
     },
 
@@ -109,7 +155,7 @@ const Storage = {
         const user = users.find(u => u.id === id);
         if (user) {
             user.enabled = user.enabled === false ? true : false;
-            localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify(users));
+            this._setNamespaceKey(this.STORAGE_KEYS.USERS, users);
             return user;
         }
         return null;
@@ -123,7 +169,7 @@ const Storage = {
         const user = users.find(u => u.id === id);
         if (user) {
             Object.assign(user, updates);
-            localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify(users));
+            this._setNamespaceKey(this.STORAGE_KEYS.USERS, users);
             return user;
         }
         return null;
@@ -137,7 +183,7 @@ const Storage = {
         const index = users.findIndex(u => u.id === id);
         if (index !== -1) {
             users.splice(index, 1);
-            localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify(users));
+            this._setNamespaceKey(this.STORAGE_KEYS.USERS, users);
             return true;
         }
         return false;
@@ -166,8 +212,8 @@ const Storage = {
      */
     getHistory() {
         try {
-            const history = localStorage.getItem(this.STORAGE_KEYS.HISTORY);
-            return history ? JSON.parse(history) : [];
+            const history = this._getNamespaceKey(this.STORAGE_KEYS.HISTORY);
+            return history ? history : [];
         } catch (e) {
             console.error('Error loading history:', e);
             return [];
@@ -193,7 +239,7 @@ const Storage = {
             history.shift();
         }
 
-        localStorage.setItem(this.STORAGE_KEYS.HISTORY, JSON.stringify(history));
+        this._setNamespaceKey(this.STORAGE_KEYS.HISTORY, history);
         this.setLastSelected(userId);
         return entry;
     },
@@ -202,21 +248,21 @@ const Storage = {
      * Clear all history
      */
     clearHistory() {
-        localStorage.setItem(this.STORAGE_KEYS.HISTORY, JSON.stringify([]));
+        this._setNamespaceKey(this.STORAGE_KEYS.HISTORY, []);
     },
 
     /**
      * Get last selected user ID
      */
     getLastSelected() {
-        return localStorage.getItem(this.STORAGE_KEYS.LAST_SELECTED);
+        return this._getNamespaceKey(this.STORAGE_KEYS.LAST_SELECTED);
     },
 
     /**
      * Set last selected user ID
      */
     setLastSelected(userId) {
-        localStorage.setItem(this.STORAGE_KEYS.LAST_SELECTED, userId);
+        this._setNamespaceKey(this.STORAGE_KEYS.LAST_SELECTED, userId);
     },
 
     /**
@@ -288,8 +334,8 @@ const Storage = {
      */
     getSettings() {
         try {
-            const settings = localStorage.getItem(this.STORAGE_KEYS.SETTINGS);
-            return settings ? { ...this.DEFAULT_SETTINGS, ...JSON.parse(settings) } : this.DEFAULT_SETTINGS;
+            const settings = this._getNamespaceKey(this.STORAGE_KEYS.SETTINGS);
+            return settings ? { ...this.DEFAULT_SETTINGS, ...settings } : this.DEFAULT_SETTINGS;
         } catch (e) {
             console.error('Error loading settings:', e);
             return this.DEFAULT_SETTINGS;
@@ -302,7 +348,7 @@ const Storage = {
     updateSettings(updates) {
         const settings = this.getSettings();
         const updated = { ...settings, ...updates };
-        localStorage.setItem(this.STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+        this._setNamespaceKey(this.STORAGE_KEYS.SETTINGS, updated);
         return updated;
     },
 
@@ -320,7 +366,7 @@ const Storage = {
     setSetting(key, value) {
         const settings = this.getSettings();
         settings[key] = value;
-        localStorage.setItem(this.STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+        this._setNamespaceKey(this.STORAGE_KEYS.SETTINGS, settings);
     },
 
     // ==================== VIEW NAVIGATION ====================
@@ -329,14 +375,14 @@ const Storage = {
      * Get last viewed section
      */
     getLastView() {
-        return localStorage.getItem(this.STORAGE_KEYS.LAST_VIEW) || 'wheel';
+        return this._getNamespaceKey(this.STORAGE_KEYS.LAST_VIEW) || 'wheel';
     },
 
     /**
      * Set last viewed section
      */
     setLastView(viewName) {
-        localStorage.setItem(this.STORAGE_KEYS.LAST_VIEW, viewName);
+        this._setNamespaceKey(this.STORAGE_KEYS.LAST_VIEW, viewName);
     },
 
     // ==================== EXPORT/IMPORT ====================
@@ -351,7 +397,7 @@ const Storage = {
             return;
         }
 
-        let csv = 'Spin #,Date,Time,User Name\n';
+        let csv = 'Race #,Date,Time,User Name\n';
         history.forEach(entry => {
             const date = new Date(entry.timestamp);
             const dateStr = date.toLocaleDateString();
@@ -364,7 +410,7 @@ const Storage = {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `wheel-history-${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `race-history-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         window.URL.revokeObjectURL(url);
     },
@@ -385,7 +431,7 @@ const Storage = {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `wheel-data-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = `race-data-${new Date().toISOString().split('T')[0]}.json`;
         link.click();
         window.URL.revokeObjectURL(url);
     },
@@ -423,10 +469,10 @@ const Storage = {
      */
     applySharedState(state) {
         if (state.users && Array.isArray(state.users)) {
-            localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify(state.users));
+            this._setNamespaceKey(this.STORAGE_KEYS.USERS, state.users);
         }
         if (state.settings && typeof state.settings === 'object') {
-            localStorage.setItem(this.STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings));
+            this._setNamespaceKey(this.STORAGE_KEYS.SETTINGS, state.settings);
         }
     },
 
@@ -436,11 +482,10 @@ const Storage = {
      * Reset entire app (clear all data)
      */
     resetAll() {
-        localStorage.removeItem(this.STORAGE_KEYS.USERS);
-        localStorage.removeItem(this.STORAGE_KEYS.HISTORY);
-        localStorage.removeItem(this.STORAGE_KEYS.SETTINGS);
-        localStorage.removeItem(this.STORAGE_KEYS.LAST_SELECTED);
-        localStorage.setItem(this.STORAGE_KEYS.FIRST_VISIT, 'false');
+        // Clear the entire namespace
+        this._setNamespaceData({});
+        // Re-initialize first visit flag
+        this._setNamespaceKey(this.STORAGE_KEYS.FIRST_VISIT, 'false');
     },
 
     /**
@@ -451,9 +496,9 @@ const Storage = {
             users: this.getUsers(),
             history: this.getHistory(),
             settings: this.getSettings(),
-            lastSelected: localStorage.getItem(this.STORAGE_KEYS.LAST_SELECTED),
-            lastView: localStorage.getItem(this.STORAGE_KEYS.LAST_VIEW),
-            firstVisit: localStorage.getItem(this.STORAGE_KEYS.FIRST_VISIT),
+            lastSelected: this._getNamespaceKey(this.STORAGE_KEYS.LAST_SELECTED),
+            lastView: this._getNamespaceKey(this.STORAGE_KEYS.LAST_VIEW),
+            firstVisit: this._getNamespaceKey(this.STORAGE_KEYS.FIRST_VISIT),
             appTitle: this.getSetting('appTitle'),
             exportDate: new Date().toISOString(),
             version: '1.0'
@@ -473,30 +518,30 @@ const Storage = {
 
             // Import users
             if (data.users && Array.isArray(data.users)) {
-                localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify(data.users));
+                this._setNamespaceKey(this.STORAGE_KEYS.USERS, data.users);
             }
 
             // Import history
             if (data.history && Array.isArray(data.history)) {
-                localStorage.setItem(this.STORAGE_KEYS.HISTORY, JSON.stringify(data.history));
+                this._setNamespaceKey(this.STORAGE_KEYS.HISTORY, data.history);
             }
 
             // Import settings
             if (data.settings && typeof data.settings === 'object') {
-                localStorage.setItem(this.STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
+                this._setNamespaceKey(this.STORAGE_KEYS.SETTINGS, data.settings);
             }
 
             // Import other data
             if (data.lastSelected) {
-                localStorage.setItem(this.STORAGE_KEYS.LAST_SELECTED, data.lastSelected);
+                this._setNamespaceKey(this.STORAGE_KEYS.LAST_SELECTED, data.lastSelected);
             }
 
             if (data.lastView) {
-                localStorage.setItem(this.STORAGE_KEYS.LAST_VIEW, data.lastView);
+                this._setNamespaceKey(this.STORAGE_KEYS.LAST_VIEW, data.lastView);
             }
 
             if (data.firstVisit) {
-                localStorage.setItem(this.STORAGE_KEYS.FIRST_VISIT, data.firstVisit);
+                this._setNamespaceKey(this.STORAGE_KEYS.FIRST_VISIT, data.firstVisit);
             }
 
             return true;
