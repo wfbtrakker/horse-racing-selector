@@ -379,7 +379,10 @@ const App = {
 
             infoDiv.appendChild(nameDiv);
 
-            // Add enabled/disabled checkbox (as sibling to user-info for better mobile layout)
+            // Group controls under the user name so the name reads above controls
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'user-controls';
+
             const checkboxContainer = document.createElement('label');
             checkboxContainer.className = 'user-enabled-toggle';
 
@@ -419,10 +422,14 @@ const App = {
             actionsDiv.appendChild(editBtn);
             actionsDiv.appendChild(deleteBtn);
 
-            card.appendChild(colorDiv);
+            // Place the color swatch into the controls row so it lines up with the checkbox and buttons
+            controlsDiv.appendChild(colorDiv);
+            controlsDiv.appendChild(checkboxContainer);
+            controlsDiv.appendChild(actionsDiv);
+
+            infoDiv.appendChild(controlsDiv);
+
             card.appendChild(infoDiv);
-            card.appendChild(checkboxContainer);
-            card.appendChild(actionsDiv);
 
             usersGrid.appendChild(card);
         });

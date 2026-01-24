@@ -586,7 +586,7 @@ input[type="checkbox"] {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-md);
     animation: slideUp var(--transition-normal);
     transition: opacity var(--transition-fast);
@@ -606,6 +606,32 @@ input[type="checkbox"] {
 .user-info {
     flex: 1;
     min-width: 0;
+}
+
+/* Controls grouped under the user name */
+.user-controls {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+    margin-top: var(--spacing-xs);
+    flex-wrap: nowrap; /* keep color, checkbox and actions on one line */
+}
+
+.user-controls .user-actions {
+    margin-left: 0;
+}
+
+/* Slightly smaller color swatch when inside controls row */
+.user-controls .user-color {
+    width: 36px;
+    height: 36px;
+}
+
+@media (max-width: 480px) {
+    .user-controls {
+        flex-wrap: wrap; /* allow wrapping on very small screens */
+        gap: var(--spacing-sm);
+    }
 }
 
 .user-name {
