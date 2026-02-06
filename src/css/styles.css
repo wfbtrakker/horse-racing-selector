@@ -365,11 +365,15 @@ input[type="checkbox"] {
 
 .race-horse-container {
     transition: none;
+    /* Hint to browser for hardware acceleration during racing */
+    will-change: transform;
 }
 
 .race-horse {
     transition: none;
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+    /* Hint to browser for hardware acceleration */
+    will-change: transform, filter;
 }
 
 .race-horse text {
@@ -386,16 +390,16 @@ input[type="checkbox"] {
 
 @keyframes gallop {
     0%, 100% {
-        transform: translate(0, 0);
+        transform: translate3d(0, 0, 0);
     }
     25% {
-        transform: translate(0, -3px) rotate(-2deg);
+        transform: translate3d(0, -3px, 0) rotate(-2deg);
     }
     50% {
-        transform: translate(0, -6px);
+        transform: translate3d(0, -6px, 0);
     }
     75% {
-        transform: translate(0, -3px) rotate(2deg);
+        transform: translate3d(0, -3px, 0) rotate(2deg);
     }
 }
 

@@ -55,8 +55,10 @@ class HorseState {
     /**
      * Update horse position based on elapsed time
      */
-    update(elapsedTime) {
-        const deltaTime = 16; // Approximate frame time (60fps)
+    update(elapsedTime, deltaTime) {
+        // Use actual delta time for frame-rate independent animation
+        // Cap deltaTime to prevent huge jumps if tab was backgrounded
+        const cappedDeltaTime = Math.min(deltaTime, 50);
 
         // Apply speed changes at scheduled times
         while (this.currentSpeedIndex < this.speedChanges.length &&
@@ -67,14 +69,14 @@ class HorseState {
         }
 
         // ALL horses use variable speed system
-        this.position += this.velocity * deltaTime;
+        this.position += this.velocity * cappedDeltaTime;
 
         // Final stretch logic - winner gets boost
         if (this.isWinner && elapsedTime >= this.finalStretchStart) {
             // In final 30%, winner gets progressive speed boost
             const finalProgress = (elapsedTime - this.finalStretchStart) / (this.totalDuration - this.finalStretchStart);
             const boost = 1 + (finalProgress * 0.8); // Up to 1.8x boost in final stretch
-            this.position += this.baseSpeed * deltaTime * boost;
+            this.position += this.baseSpeed * cappedDeltaTime * boost;
 
             // Ensure winner crosses finish line by end
             const targetPosition = 50 + this.raceDistance;
@@ -83,18 +85,20 @@ class HorseState {
                 this.position = minPosition;
             }
         } else if (!this.isWinner) {
-            // Non-winners slow down in final stretch
+            // Non-winners continue moving but slower in final stretch
             if (elapsedTime >= this.finalStretchStart) {
                 const finalProgress = (elapsedTime - this.finalStretchStart) / (this.totalDuration - this.finalStretchStart);
-                const slowdown = 1 - (finalProgress * 0.4); // Gradually slow to 60% speed
+                // Gentler slowdown - from 100% to 75% speed instead of 60%
+                const slowdown = 1 - (finalProgress * 0.25);
                 this.velocity = this.velocity * slowdown;
             }
 
-            // Cap non-winners at 92% of race distance
+            // Cap non-winners at 92% of race distance, but keep them moving slightly
             const maxPosition = 50 + (this.raceDistance * 0.92);
-            if (this.position > maxPosition) {
+            if (this.position >= maxPosition) {
                 this.position = maxPosition;
-                this.velocity = this.velocity * 0.85; // Significant slowdown at cap
+                // Keep a tiny bit of movement so they don't appear completely stopped
+                this.velocity = this.baseSpeed * 0.15;
             }
         }
 
@@ -118,6 +122,7 @@ const Race = {
     raceDistance: 900,
     animationFrameId: null,
     startTime: null,
+    lastFrameTime: null,
     duration: 7000,
     selectedUser: null,
     selectedIndex: -1,
@@ -306,6 +311,7 @@ const Race = {
 
         // Start animation
         this.startTime = performance.now();
+        this.lastFrameTime = null; // Reset for new race
         this.animate(this.startTime, onComplete);
 
         // Safety timeout in case animation doesn't complete
@@ -324,6 +330,10 @@ const Race = {
 
         const elapsedTime = currentTime - this.startTime;
 
+        // Calculate delta time from last frame (defaults to 16ms on first frame)
+        const deltaTime = this.lastFrameTime ? currentTime - this.lastFrameTime : 16;
+        this.lastFrameTime = currentTime;
+
         // Check if race should complete
         if (elapsedTime >= this.duration) {
             this.completeRace(onComplete);
@@ -335,11 +345,12 @@ const Race = {
         const laneHeight = trackHeight / this.users.length;
 
         this.horses.forEach((horse, index) => {
-            horse.update(elapsedTime);
+            horse.update(elapsedTime, deltaTime);
 
             const horseElement = document.getElementById(`horse-${horse.userId}`);
             if (horseElement) {
                 const laneY = (index + 0.5) * laneHeight;
+                // Use translate3d for hardware acceleration
                 horseElement.setAttribute('transform', `translate(${horse.position}, ${laneY})`);
             }
         });
