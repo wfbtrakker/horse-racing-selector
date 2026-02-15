@@ -27,6 +27,16 @@ class HorseState {
 
         // Track when final stretch begins (last 30% of race)
         this.finalStretchStart = this.totalDuration * 0.7;
+
+        // Random finish position for non-winners (85-96% of race distance)
+        // This adds variety and prevents all horses from stopping at the same place
+        this.maxFinishPercent = 0.85 + (Math.random() * 0.11);
+
+        // Random slowdown characteristics for non-winners
+        this.slowdownRate = 0.5 + (Math.random() * 0.3); // 0.5 to 0.8
+
+        // When non-winners start slowing (30-50% through race)
+        this.slowdownStart = this.totalDuration * (0.3 + Math.random() * 0.2);
     }
 
     /**
@@ -60,47 +70,75 @@ class HorseState {
         // Cap deltaTime to prevent huge jumps if tab was backgrounded
         const cappedDeltaTime = Math.min(deltaTime, 50);
 
-        // Apply speed changes at scheduled times
-        while (this.currentSpeedIndex < this.speedChanges.length &&
-               elapsedTime >= this.speedChanges[this.currentSpeedIndex].time) {
-            const change = this.speedChanges[this.currentSpeedIndex];
-            this.velocity = this.baseSpeed * change.multiplier;
-            this.currentSpeedIndex++;
+        // Apply speed changes at scheduled times (only before final stretch for non-winners)
+        if (this.isWinner || elapsedTime < this.finalStretchStart) {
+            while (this.currentSpeedIndex < this.speedChanges.length &&
+                   elapsedTime >= this.speedChanges[this.currentSpeedIndex].time) {
+                const change = this.speedChanges[this.currentSpeedIndex];
+                this.velocity = this.baseSpeed * change.multiplier;
+                this.currentSpeedIndex++;
+            }
         }
 
-        // ALL horses use variable speed system
-        this.position += this.velocity * cappedDeltaTime;
+        // Calculate movement based on whether this is the winner
+        let movement = 0;
 
-        // Final stretch logic - winner gets boost
-        if (this.isWinner && elapsedTime >= this.finalStretchStart) {
-            // In final 30%, winner gets progressive speed boost
-            const finalProgress = (elapsedTime - this.finalStretchStart) / (this.totalDuration - this.finalStretchStart);
-            const boost = 1 + (finalProgress * 0.8); // Up to 1.8x boost in final stretch
-            this.position += this.baseSpeed * cappedDeltaTime * boost;
-
-            // Ensure winner crosses finish line by end
-            const targetPosition = 50 + this.raceDistance;
-            const minPosition = 50 + (this.raceDistance * (0.7 + (finalProgress * 0.3)));
-            if (this.position < minPosition) {
-                this.position = minPosition;
-            }
-        } else if (!this.isWinner) {
-            // Non-winners continue moving but slower in final stretch
+        // Calculate movement based on winner vs non-winner
+        if (this.isWinner) {
+            // WINNER LOGIC: Maintain speed and get boost in final stretch
             if (elapsedTime >= this.finalStretchStart) {
+                // In final 30%, winner gets progressive speed boost
                 const finalProgress = (elapsedTime - this.finalStretchStart) / (this.totalDuration - this.finalStretchStart);
-                // Gentler slowdown - from 100% to 75% speed instead of 60%
-                const slowdown = 1 - (finalProgress * 0.25);
-                this.velocity = this.velocity * slowdown;
-            }
+                const boost = 1 + (finalProgress * 0.8); // Up to 1.8x boost in final stretch
+                movement = this.baseSpeed * cappedDeltaTime * boost;
 
-            // Cap non-winners at 92% of race distance, but keep them moving slightly
-            const maxPosition = 50 + (this.raceDistance * 0.92);
-            if (this.position >= maxPosition) {
-                this.position = maxPosition;
-                // Keep a tiny bit of movement so they don't appear completely stopped
-                this.velocity = this.baseSpeed * 0.15;
+                // Ensure winner crosses finish line by end
+                const targetPosition = 50 + this.raceDistance;
+                const minPosition = 50 + (this.raceDistance * (0.7 + (finalProgress * 0.3)));
+                if (this.position < minPosition) {
+                    this.position = minPosition;
+                }
+            } else {
+                // Before final stretch - use current velocity from speed changes
+                movement = this.velocity * cappedDeltaTime;
+            }
+        } else {
+            // NON-WINNER LOGIC: Progressive slowdown throughout race
+            const targetPosition = 50 + (this.raceDistance * this.maxFinishPercent);
+            const distanceRemaining = targetPosition - this.position;
+
+            if (elapsedTime < this.slowdownStart) {
+                // Early race (before slowdown starts) - normal variable speed
+                movement = this.velocity * cappedDeltaTime;
+            } else {
+                // After slowdown starts - gradual deceleration throughout remainder of race
+                const slowdownDuration = this.totalDuration - this.slowdownStart;
+                const slowdownProgress = (elapsedTime - this.slowdownStart) / slowdownDuration;
+
+                // Progressive slowdown: start at current speed, end at ~30-40% speed
+                // Curve the slowdown - slow more gradually at first, then more rapidly
+                const slowdownCurve = Math.pow(slowdownProgress, 1.5);
+                const speedMultiplier = 1 - (slowdownCurve * this.slowdownRate);
+
+                // Also factor in distance remaining to target
+                let distanceFactor = 1.0;
+                if (distanceRemaining > 0 && distanceRemaining < 200) {
+                    // Close to target - slow down more based on proximity
+                    distanceFactor = Math.max(0.4, distanceRemaining / 200);
+                } else if (distanceRemaining <= 0) {
+                    // Past target - maintain minimum speed
+                    distanceFactor = 0.3;
+                }
+
+                // Combine factors and ensure minimum speed
+                const finalSpeedMultiplier = Math.max(0.3, speedMultiplier * distanceFactor);
+                this.velocity = this.baseSpeed * finalSpeedMultiplier;
+                movement = this.velocity * cappedDeltaTime;
             }
         }
+
+        // Apply the movement - always move forward
+        this.position += movement;
 
         // Ensure winner finishes
         if (this.isWinner && elapsedTime >= this.totalDuration * 0.95) {
@@ -127,6 +165,12 @@ const Race = {
     selectedUser: null,
     selectedIndex: -1,
     raceTimeoutId: null,
+
+    // Commentary state
+    lastCommentaryUpdate: 0,
+    commentaryUpdateInterval: 600, // Update commentary every 600ms
+    previousLeader: null,
+    previousPositions: [],
 
     /**
      * Initialize race module
@@ -252,6 +296,22 @@ const Race = {
             resultDisplay.classList.add('hidden');
         }
 
+        // Show and clear commentary display (if enabled)
+        const commentaryEnabled = Storage.getSetting('commentaryEnabled');
+        const commentaryDisplay = document.getElementById('race-commentary');
+        if (commentaryDisplay && commentaryEnabled) {
+            commentaryDisplay.classList.remove('hidden');
+            const commentaryText = document.getElementById('commentary-text');
+            if (commentaryText) {
+                commentaryText.textContent = 'And they\'re off!';
+            }
+        }
+
+        // Reset commentary state
+        this.lastCommentaryUpdate = 0;
+        this.previousLeader = null;
+        this.previousPositions = [];
+
         // Clear any previous winner highlights and animations
         const horsesGroup = document.querySelector('#horses');
         if (horsesGroup) {
@@ -355,8 +415,96 @@ const Race = {
             }
         });
 
+        // Update racing commentary
+        this.updateCommentary(elapsedTime);
+
         // Continue animation
         this.animationFrameId = requestAnimationFrame((time) => this.animate(time, onComplete));
+    },
+
+    /**
+     * Update racing commentary based on current positions
+     */
+    updateCommentary(elapsedTime) {
+        // Check if commentary is enabled
+        const commentaryEnabled = Storage.getSetting('commentaryEnabled');
+        if (!commentaryEnabled) {
+            return;
+        }
+
+        // Only update at intervals to avoid flickering
+        if (elapsedTime - this.lastCommentaryUpdate < this.commentaryUpdateInterval) {
+            return;
+        }
+
+        this.lastCommentaryUpdate = elapsedTime;
+
+        // Sort horses by position to find leaders
+        const sortedHorses = [...this.horses].sort((a, b) => b.position - a.position);
+        const leader = sortedHorses[0];
+        const secondPlace = sortedHorses.length > 1 ? sortedHorses[1] : null;
+
+        // Calculate race progress
+        const progress = elapsedTime / this.duration;
+
+        const commentaryText = document.getElementById('commentary-text');
+        if (!commentaryText) return;
+
+        let commentary = '';
+
+        // Generate commentary based on race state
+        if (progress < 0.25) {
+            // Early race - identify leader
+            if (secondPlace && Math.abs(leader.position - secondPlace.position) < 30) {
+                commentary = `It's ${leader.userName} and ${secondPlace.userName} neck and neck!`;
+            } else {
+                commentary = `${leader.userName} takes an early lead!`;
+            }
+        } else if (progress < 0.5) {
+            // Mid race - track position changes
+            if (this.previousLeader && this.previousLeader !== leader.userName) {
+                commentary = `${leader.userName} surges ahead! ${this.previousLeader} falling back!`;
+            } else if (secondPlace && Math.abs(leader.position - secondPlace.position) < 40) {
+                commentary = `${secondPlace.userName} closing in on ${leader.userName}!`;
+            } else {
+                commentary = `${leader.userName} maintaining the lead!`;
+            }
+        } else if (progress < 0.75) {
+            // Late mid race - building tension
+            const gap = secondPlace ? leader.position - secondPlace.position : 100;
+            if (gap < 30) {
+                commentary = `This is a close race! ${leader.userName} barely ahead of ${secondPlace.userName}!`;
+            } else if (gap < 60) {
+                commentary = `${secondPlace.userName} is catching up to ${leader.userName}!`;
+            } else {
+                commentary = `${leader.userName} pulling away from the pack!`;
+            }
+        } else {
+            // Final stretch - maximum drama
+            if (secondPlace && Math.abs(leader.position - secondPlace.position) < 35) {
+                commentary = `Coming down to the wire! ${leader.userName} and ${secondPlace.userName} in a photo finish!`;
+            } else if (leader.isWinner) {
+                commentary = `${leader.userName} charging to the finish line!`;
+            } else {
+                commentary = `It's anyone's race! Who will cross first?!`;
+            }
+        }
+
+        // Store current leader for next update
+        this.previousLeader = leader.userName;
+
+        // Update the commentary text with smooth crossfade
+        // Only update if text has actually changed
+        if (commentaryText.textContent !== commentary) {
+            // Fade out
+            commentaryText.style.opacity = '0';
+
+            // Change text and fade back in
+            setTimeout(() => {
+                commentaryText.textContent = commentary;
+                commentaryText.style.opacity = '1';
+            }, 200);
+        }
     },
 
     /**
@@ -390,6 +538,23 @@ const Race = {
             horsesGroup.querySelectorAll('.race-horse').forEach(horse => {
                 horse.classList.remove('racing');
             });
+        }
+
+        // Update commentary with winner announcement (if enabled)
+        const commentaryEnabled = Storage.getSetting('commentaryEnabled');
+        if (commentaryEnabled) {
+            const commentaryText = document.getElementById('commentary-text');
+            if (commentaryText) {
+                // Smooth fade to winner announcement
+                commentaryText.style.opacity = '0';
+
+                setTimeout(() => {
+                    commentaryText.textContent = `🏆 ${this.selectedUser.name} wins the race! 🏆`;
+                    commentaryText.style.fontSize = '26px';
+                    commentaryText.style.fontWeight = '900';
+                    commentaryText.style.opacity = '1';
+                }, 200);
+            }
         }
 
         // Stop racing sound and play finish sounds
@@ -477,6 +642,17 @@ const Race = {
 
         this.isRacing = false;
         this.horses = [];
+
+        // Reset commentary state
+        this.lastCommentaryUpdate = 0;
+        this.previousLeader = null;
+        this.previousPositions = [];
+
+        // Hide commentary when not racing
+        const commentaryDisplay = document.getElementById('race-commentary');
+        if (commentaryDisplay) {
+            commentaryDisplay.classList.add('hidden');
+        }
 
         // Remove racing animation from all horses
         const horsesGroup = document.querySelector('#horses');

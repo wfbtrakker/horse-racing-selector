@@ -58,6 +58,11 @@
                     <span id="result-name" class="result-name"></span>
                 </div>
 
+                <!-- Racing Commentary -->
+                <div id="race-commentary" class="race-commentary hidden">
+                    <span id="commentary-text" class="commentary-text"></span>
+                </div>
+
                 <div class="race-container">
                     <svg id="race-track" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
                         <g id="lanes"></g>
@@ -149,6 +154,13 @@
                                 <span>5s</span>
                                 <span>20s</span>
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input id="commentary-toggle" type="checkbox" checked title="Toggle racing commentary">
+                                Race Commentary
+                            </label>
                         </div>
                     </div>
 

@@ -324,6 +324,58 @@ input[type="checkbox"] {
 }
 
 /* ==================== RACE VIEW ==================== */
+.race-commentary {
+    margin: var(--spacing-md) auto;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(33, 150, 243, 0.15));
+    border-left: 4px solid var(--primary-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+    max-width: 1200px;
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: slideDown var(--transition-normal);
+}
+
+[data-theme="dark"] .race-commentary {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(33, 150, 243, 0.2));
+}
+
+.commentary-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    transition: opacity 0.4s ease-in-out;
+}
+
+@media (max-width: 768px) {
+    .race-commentary {
+        padding: var(--spacing-sm) var(--spacing-md);
+        min-height: 50px;
+    }
+
+    .commentary-text {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .race-commentary {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        min-height: 45px;
+    }
+
+    .commentary-text {
+        font-size: 16px;
+    }
+}
+
 .race-container {
     display: flex;
     justify-content: center;

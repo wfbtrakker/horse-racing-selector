@@ -99,6 +99,10 @@ const App = {
             if (appTitleInput) {
                 appTitleInput.value = Storage.getSetting('appTitle') || 'Team Horse Racing';
             }
+            const commentaryToggle = document.getElementById('commentary-toggle');
+            if (commentaryToggle) {
+                commentaryToggle.checked = Storage.getSetting('commentaryEnabled');
+            }
         }
     },
 
@@ -217,8 +221,13 @@ const App = {
         const resultDisplay = document.getElementById('result-display');
         const resultName = document.getElementById('result-name');
 
-        resultName.textContent = user.name;
-        resultDisplay.classList.remove('hidden');
+        // Only show result display if commentary is disabled
+        // (commentary already shows the winner)
+        const commentaryEnabled = Storage.getSetting('commentaryEnabled');
+        if (!commentaryEnabled) {
+            resultName.textContent = user.name;
+            resultDisplay.classList.remove('hidden');
+        }
 
         // Trigger winner effect
         Effects.triggerWinnerEffect(user.name);
@@ -715,6 +724,7 @@ const App = {
         const winnerEffect = document.getElementById('winner-effect');
         const darkModeToggle = document.getElementById('dark-mode-toggle');
         const soundToggle = document.getElementById('sound-toggle');
+        const commentaryToggle = document.getElementById('commentary-toggle');
         const resetApp = document.getElementById('reset-app');
 
         // Load current settings
@@ -724,6 +734,7 @@ const App = {
         winnerEffect.value = settings.winnerEffect;
         darkModeToggle.checked = settings.darkMode;
         soundToggle.checked = settings.soundEnabled;
+        commentaryToggle.checked = settings.commentaryEnabled;
 
         // Spin duration
         spinDurationSlider.addEventListener('input', (e) => {
@@ -757,6 +768,11 @@ const App = {
         // Sound
         soundToggle.addEventListener('change', (e) => {
             Sounds.setEnabled(e.target.checked);
+        });
+
+        // Commentary
+        commentaryToggle.addEventListener('change', (e) => {
+            Storage.setSetting('commentaryEnabled', e.target.checked);
         });
 
         // Winner effect

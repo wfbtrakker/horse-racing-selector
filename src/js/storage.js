@@ -23,7 +23,8 @@ const Storage = {
         spinDuration: 7,
         soundEnabled: true,
         darkMode: false,
-        winnerEffect: 'confetti'
+        winnerEffect: 'confetti',
+        commentaryEnabled: true
     },
 
     // Color palette
