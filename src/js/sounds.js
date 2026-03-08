@@ -1,20 +1,16 @@
 /**
  * Sounds Module - Manages audio playback
- * Handles spinning, stop, and fanfare sounds with graceful degradation
+ * Only fanfare is used; spinning and stop files have been removed.
  */
 
 const Sounds = {
     // Audio elements
     audioElements: {
-        spinning: null,
-        stop: null,
         fanfare: null
     },
 
     // Audio file paths
     AUDIO_PATHS: {
-        spinning: 'src/audio/spinning.mp3',
-        stop: 'src/audio/stop.mp3',
         fanfare: 'src/audio/fanfare.mp3'
     },
 
@@ -28,9 +24,7 @@ const Sounds = {
         // Load enabled state from settings
         this.enabled = Storage.getSetting('soundEnabled');
 
-        // Create audio elements with error handling
-        this.createAudioElement('spinning', true); // Loop this one
-        this.createAudioElement('stop', false);
+        // Create audio element with error handling
         this.createAudioElement('fanfare', false);
     },
 
@@ -46,13 +40,11 @@ const Sounds = {
 
             // Handle load errors silently
             audio.addEventListener('error', () => {
-                // Silently disable this audio element if file doesn't exist
                 this.audioElements[name] = null;
             });
 
             this.audioElements[name] = audio;
         } catch (e) {
-            // Silently handle missing audio files
             this.audioElements[name] = null;
         }
     },
@@ -73,64 +65,6 @@ const Sounds = {
      */
     isEnabled() {
         return this.enabled;
-    },
-
-    /**
-     * Play spinning sound (loop during spin)
-     */
-    playSpinning() {
-        if (!this.enabled || !this.audioElements.spinning) return;
-
-        try {
-            // Reset to beginning if already playing
-            this.audioElements.spinning.currentTime = 0;
-            // Create promise to handle potential autoplay restrictions
-            const playPromise = this.audioElements.spinning.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        // Audio started playing
-                    })
-                    .catch(() => {
-                        // Autoplay prevented or file missing - silently ignore
-                    });
-            }
-        } catch (e) {
-            // Silently handle errors (file missing, etc.)
-        }
-    },
-
-    /**
-     * Stop spinning sound
-     */
-    stopSpinning() {
-        if (!this.audioElements.spinning) return;
-
-        try {
-            this.audioElements.spinning.pause();
-            this.audioElements.spinning.currentTime = 0;
-        } catch (e) {
-            // Silently handle errors
-        }
-    },
-
-    /**
-     * Play stop/click sound
-     */
-    playStop() {
-        if (!this.enabled || !this.audioElements.stop) return;
-
-        try {
-            this.audioElements.stop.currentTime = 0;
-            const playPromise = this.audioElements.stop.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    // Autoplay prevented or file missing - silently ignore
-                });
-            }
-        } catch (e) {
-            // Silently handle errors
-        }
     },
 
     /**
