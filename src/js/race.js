@@ -168,7 +168,7 @@ const Race = {
 
     // Commentary state
     lastCommentaryUpdate: 0,
-    commentaryUpdateInterval: 600, // Update commentary every 600ms
+    commentaryUpdateInterval: 2500, // Update commentary every 2500ms (allows voice to finish naturally)
     previousLeader: null,
     previousPositions: [],
 
@@ -457,37 +457,37 @@ const Race = {
         if (progress < 0.25) {
             // Early race - identify leader
             if (secondPlace && Math.abs(leader.position - secondPlace.position) < 30) {
-                commentary = `It's ${leader.userName} and ${secondPlace.userName} neck and neck!`;
+                commentary = `${leader.userName} and ${secondPlace.userName} are absolutely inseparable out of the gates.`;
             } else {
-                commentary = `${leader.userName} takes an early lead!`;
+                commentary = `${leader.userName} has stolen an early lead and is looking very comfortable.`;
             }
         } else if (progress < 0.5) {
             // Mid race - track position changes
             if (this.previousLeader && this.previousLeader !== leader.userName) {
-                commentary = `${leader.userName} surges ahead! ${this.previousLeader} falling back!`;
+                commentary = `A change at the front — ${leader.userName} has moved through on the inside, with ${this.previousLeader} now dropping back.`;
             } else if (secondPlace && Math.abs(leader.position - secondPlace.position) < 40) {
-                commentary = `${secondPlace.userName} closing in on ${leader.userName}!`;
+                commentary = `${secondPlace.userName} is closing the gap on ${leader.userName}, this one is far from settled.`;
             } else {
-                commentary = `${leader.userName} maintaining the lead!`;
+                commentary = `${leader.userName} is dictating the pace out in front, looking smooth and controlled.`;
             }
         } else if (progress < 0.75) {
             // Late mid race - building tension
             const gap = secondPlace ? leader.position - secondPlace.position : 100;
             if (gap < 30) {
-                commentary = `This is a close race! ${leader.userName} barely ahead of ${secondPlace.userName}!`;
+                commentary = `Remarkably close racing — ${leader.userName} just a whisker in front of ${secondPlace.userName}.`;
             } else if (gap < 60) {
-                commentary = `${secondPlace.userName} is catching up to ${leader.userName}!`;
+                commentary = `${secondPlace.userName} is eating into the lead, ${leader.userName} will need to respond.`;
             } else {
-                commentary = `${leader.userName} pulling away from the pack!`;
+                commentary = `${leader.userName} has opened up a real advantage now, pulling clear of the field.`;
             }
         } else {
             // Final stretch - maximum drama
             if (secondPlace && Math.abs(leader.position - secondPlace.position) < 35) {
-                commentary = `Coming down to the wire! ${leader.userName} and ${secondPlace.userName} in a photo finish!`;
+                commentary = `Neck and neck as they come to the line — ${leader.userName} and ${secondPlace.userName} giving absolutely everything.`;
             } else if (leader.isWinner) {
-                commentary = `${leader.userName} charging to the finish line!`;
+                commentary = `${leader.userName} is driving hard for the finish line and this looks like it could be their race.`;
             } else {
-                commentary = `It's anyone's race! Who will cross first?!`;
+                commentary = `Into the final stretch now and anything can still happen here.`;
             }
         }
 
@@ -521,10 +521,13 @@ const Race = {
         const cleanText = text.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim();
         if (!cleanText) return;
 
-        window.speechSynthesis.cancel();
+        // Don't interrupt speech already in progress — let it finish naturally
+        if (window.speechSynthesis.speaking) return;
+
         const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.rate = 1.15;
-        utterance.pitch = 1.1;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
 
         // Select a male British English voice
         const voices = window.speechSynthesis.getVoices();
