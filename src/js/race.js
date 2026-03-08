@@ -525,6 +525,14 @@ const Race = {
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.rate = 1.15;
         utterance.pitch = 1.1;
+
+        // Select a male British English voice
+        const voices = window.speechSynthesis.getVoices();
+        const britishMale = voices.find(v => v.lang === 'en-GB' && /male/i.test(v.name))
+            || voices.find(v => v.lang === 'en-GB' && /daniel|oliver|james|george/i.test(v.name))
+            || voices.find(v => v.lang === 'en-GB');
+        if (britishMale) utterance.voice = britishMale;
+
         window.speechSynthesis.speak(utterance);
     },
 
