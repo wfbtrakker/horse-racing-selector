@@ -194,7 +194,9 @@ const Race = {
 
             // Try increasingly broad matches for a British male voice
             this.britishMaleVoice =
-                // Exact lang + "male" in name (Chrome: "Google UK English Male")
+                // Direct name match first (most reliable)
+                voices.find(v => v.name === 'Google UK English Male') ||
+                // lang + "male" in name
                 voices.find(v => /^en.GB$/i.test(v.lang) && /male/i.test(v.name)) ||
                 // Microsoft Edge natural voices (Ryan, George are male en-GB)
                 voices.find(v => /^en.GB$/i.test(v.lang) && /ryan|george|oliver|james|daniel/i.test(v.name)) ||
@@ -202,8 +204,6 @@ const Race = {
                 voices.find(v => /^en.GB$/i.test(v.lang)) ||
                 // Fallback: name contains "UK" and sounds male
                 voices.find(v => /uk/i.test(v.name) && /male|ryan|george|daniel/i.test(v.name)) ||
-                // Last resort: any voice with UK in the name
-                voices.find(v => /uk/i.test(v.name)) ||
                 null;
 
             console.log('[Voice] Selected:', this.britishMaleVoice ? `${this.britishMaleVoice.name} (${this.britishMaleVoice.lang})` : 'none — using browser default');
@@ -559,8 +559,8 @@ const Race = {
         const cleanText = text.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim();
         if (!cleanText) return;
 
-        // Don't interrupt speech already in progress — let it finish naturally
-        if (window.speechSynthesis.speaking) return;
+        // Cancel any ongoing speech then speak the new line
+        window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.rate = 1.0;
@@ -568,7 +568,12 @@ const Race = {
         utterance.volume = 1.0;
 
         // Use cached British male voice
-        if (this.britishMaleVoice) utterance.voice = this.britishMaleVoice;
+        if (this.britishMaleVoice) {
+            utterance.voice = this.britishMaleVoice;
+            console.log('[Voice] Speaking with:', this.britishMaleVoice.name);
+        } else {
+            console.log('[Voice] No British voice cached — speaking with browser default');
+        }
 
         window.speechSynthesis.speak(utterance);
     },
