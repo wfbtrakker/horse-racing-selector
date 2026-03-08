@@ -368,8 +368,6 @@ const Race = {
         const settings = Storage.getSettings();
         this.duration = settings.spinDuration * 1000; // Convert to milliseconds
 
-        // Play racing sound
-        Sounds.playSpinning();
 
         // Select random winner (preventing same user as last race)
         this.selectedIndex = this.getRandomUserIndex();
@@ -629,9 +627,7 @@ const Race = {
             }
         }
 
-        // Stop racing sound and play finish sounds
-        Sounds.stopSpinning();
-        Sounds.playStop();
+        // Play finish sound
         setTimeout(() => {
             Sounds.playFanfare();
         }, 300);
