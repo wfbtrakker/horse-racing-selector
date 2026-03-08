@@ -262,8 +262,8 @@ const Race = {
             <!-- Colored circle background for user identification -->
             <circle cx="0" cy="0" r="20" fill="${user.color}" opacity="0.85" stroke="#fff" stroke-width="2"/>
 
-            <!-- Horse emoji as text element -->
-            <text x="0" y="0" font-size="38" text-anchor="middle" dominant-baseline="central">🐎</text>
+            <!-- Horse emoji as text element (flipped to face right) -->
+            <text x="0" y="0" font-size="38" text-anchor="middle" dominant-baseline="central" transform="scale(-1, 1)">🐎</text>
         `;
 
         innerGroup.innerHTML = horseSVG;
