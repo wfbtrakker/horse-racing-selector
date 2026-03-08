@@ -190,23 +190,21 @@ const Race = {
             const voices = window.speechSynthesis.getVoices();
             if (!voices.length) return false;
 
-            console.log('[Voice] Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+            const saved = Storage.getSetting('selectedVoice');
 
-            // Try increasingly broad matches for a British male voice
-            this.britishMaleVoice =
-                // Direct name match first (most reliable)
-                voices.find(v => v.name === 'Google UK English Male') ||
-                // lang + "male" in name
-                voices.find(v => /^en.GB$/i.test(v.lang) && /male/i.test(v.name)) ||
-                // Microsoft Edge natural voices (Ryan, George are male en-GB)
-                voices.find(v => /^en.GB$/i.test(v.lang) && /ryan|george|oliver|james|daniel/i.test(v.name)) ||
-                // Any en-GB voice
-                voices.find(v => /^en.GB$/i.test(v.lang)) ||
-                // Fallback: name contains "UK" and sounds male
-                voices.find(v => /uk/i.test(v.name) && /male|ryan|george|daniel/i.test(v.name)) ||
-                null;
+            if (saved) {
+                // Use the user's chosen voice if available
+                this.britishMaleVoice = voices.find(v => v.name === saved) || null;
+            } else {
+                // Auto-select best British male voice
+                this.britishMaleVoice =
+                    voices.find(v => v.name === 'Google UK English Male') ||
+                    voices.find(v => /^en.GB$/i.test(v.lang) && /male/i.test(v.name)) ||
+                    voices.find(v => /^en.GB$/i.test(v.lang) && /ryan|george|oliver|james|daniel/i.test(v.name)) ||
+                    voices.find(v => /^en.GB$/i.test(v.lang)) ||
+                    null;
+            }
 
-            console.log('[Voice] Selected:', this.britishMaleVoice ? `${this.britishMaleVoice.name} (${this.britishMaleVoice.lang})` : 'none — using browser default');
             return true;
         };
 
@@ -565,13 +563,8 @@ const Race = {
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
 
-        // Use cached British male voice
-        if (this.britishMaleVoice) {
-            utterance.voice = this.britishMaleVoice;
-            console.log('[Voice] Speaking with:', this.britishMaleVoice.name);
-        } else {
-            console.log('[Voice] No British voice cached — speaking with browser default');
-        }
+        // Use selected/cached voice
+        if (this.britishMaleVoice) utterance.voice = this.britishMaleVoice;
 
         window.speechSynthesis.speak(utterance);
     },

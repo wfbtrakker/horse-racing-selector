@@ -107,6 +107,47 @@ const App = {
             if (voiceCommentaryToggle) {
                 voiceCommentaryToggle.checked = Storage.getSetting('voiceCommentaryEnabled');
             }
+            this.populateVoiceSelect();
+        }
+    },
+
+    /**
+     * Populate the voice selector dropdown with available speech synthesis voices
+     */
+    populateVoiceSelect() {
+        const select = document.getElementById('voice-select');
+        if (!select || !window.speechSynthesis) return;
+
+        const fill = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) return;
+
+            const saved = Storage.getSetting('selectedVoice');
+            select.innerHTML = '';
+
+            // Default option
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = '— Browser default —';
+            select.appendChild(defaultOpt);
+
+            voices.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.name;
+                opt.textContent = `${v.name} (${v.lang})`;
+                if (v.name === saved) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            if (!saved) select.value = '';
+        };
+
+        fill();
+        if (select.options.length <= 1) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                fill();
+                window.speechSynthesis.onvoiceschanged = null;
+            };
         }
     },
 
@@ -781,13 +822,22 @@ const App = {
             Storage.setSetting('commentaryEnabled', e.target.checked);
         });
 
-        // Voice commentary
+        // Voice commentary toggle
         if (voiceCommentaryToggle) {
             voiceCommentaryToggle.addEventListener('change', (e) => {
                 Storage.setSetting('voiceCommentaryEnabled', e.target.checked);
                 if (!e.target.checked) {
                     window.speechSynthesis.cancel();
                 }
+            });
+        }
+
+        // Voice selector
+        const voiceSelect = document.getElementById('voice-select');
+        if (voiceSelect) {
+            voiceSelect.addEventListener('change', (e) => {
+                Storage.setSetting('selectedVoice', e.target.value);
+                Race.loadBritishVoice(); // re-cache with new selection
             });
         }
 
