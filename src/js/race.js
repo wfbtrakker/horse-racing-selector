@@ -188,14 +188,29 @@ const Race = {
     loadBritishVoice() {
         const pickVoice = () => {
             const voices = window.speechSynthesis.getVoices();
-            if (!voices.length) return;
-            this.britishMaleVoice = voices.find(v => v.lang === 'en-GB' && /male/i.test(v.name))
-                || voices.find(v => v.lang === 'en-GB' && /daniel|oliver|james|george/i.test(v.name))
-                || voices.find(v => v.lang === 'en-GB')
-                || null;
+            if (!voices.length) return false;
+
+            console.log('[Voice] Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+
+            // Try increasingly broad matches for a British male voice
+            this.britishMaleVoice =
+                // Exact lang + "male" in name (Chrome: "Google UK English Male")
+                voices.find(v => /^en.GB$/i.test(v.lang) && /male/i.test(v.name)) ||
+                // Microsoft Edge natural voices (Ryan, George are male en-GB)
+                voices.find(v => /^en.GB$/i.test(v.lang) && /ryan|george|oliver|james|daniel/i.test(v.name)) ||
+                // Any en-GB voice
+                voices.find(v => /^en.GB$/i.test(v.lang)) ||
+                // Fallback: name contains "UK" and sounds male
+                voices.find(v => /uk/i.test(v.name) && /male|ryan|george|daniel/i.test(v.name)) ||
+                // Last resort: any voice with UK in the name
+                voices.find(v => /uk/i.test(v.name)) ||
+                null;
+
+            console.log('[Voice] Selected:', this.britishMaleVoice ? `${this.britishMaleVoice.name} (${this.britishMaleVoice.lang})` : 'none — using browser default');
+            return true;
         };
-        pickVoice();
-        if (!this.britishMaleVoice && window.speechSynthesis.onvoiceschanged !== undefined) {
+
+        if (!pickVoice()) {
             window.speechSynthesis.onvoiceschanged = () => {
                 pickVoice();
                 window.speechSynthesis.onvoiceschanged = null;
