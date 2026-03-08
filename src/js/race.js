@@ -171,6 +171,7 @@ const Race = {
     commentaryUpdateInterval: 2500, // Update commentary every 2500ms (allows voice to finish naturally)
     previousLeader: null,
     previousPositions: [],
+    britishMaleVoice: null,
 
     /**
      * Initialize race module
@@ -178,6 +179,28 @@ const Race = {
     init() {
         this.users = Storage.getUsers();
         this.render();
+        this.loadBritishVoice();
+    },
+
+    /**
+     * Cache the British male voice once voices are available
+     */
+    loadBritishVoice() {
+        const pickVoice = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) return;
+            this.britishMaleVoice = voices.find(v => v.lang === 'en-GB' && /male/i.test(v.name))
+                || voices.find(v => v.lang === 'en-GB' && /daniel|oliver|james|george/i.test(v.name))
+                || voices.find(v => v.lang === 'en-GB')
+                || null;
+        };
+        pickVoice();
+        if (!this.britishMaleVoice && window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                pickVoice();
+                window.speechSynthesis.onvoiceschanged = null;
+            };
+        }
     },
 
     /**
@@ -529,12 +552,8 @@ const Race = {
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
 
-        // Select a male British English voice
-        const voices = window.speechSynthesis.getVoices();
-        const britishMale = voices.find(v => v.lang === 'en-GB' && /male/i.test(v.name))
-            || voices.find(v => v.lang === 'en-GB' && /daniel|oliver|james|george/i.test(v.name))
-            || voices.find(v => v.lang === 'en-GB');
-        if (britishMale) utterance.voice = britishMale;
+        // Use cached British male voice
+        if (this.britishMaleVoice) utterance.voice = this.britishMaleVoice;
 
         window.speechSynthesis.speak(utterance);
     },
