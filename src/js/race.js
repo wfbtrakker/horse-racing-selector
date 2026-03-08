@@ -555,8 +555,8 @@ const Race = {
         const cleanText = text.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim();
         if (!cleanText) return;
 
-        // Cancel any ongoing speech then speak the new line
-        window.speechSynthesis.cancel();
+        // If already speaking, only queue if nothing else is pending (avoid backlog)
+        if (window.speechSynthesis.pending) return;
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.rate = 1.0;
