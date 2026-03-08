@@ -493,39 +493,39 @@ const Race = {
 
         // Generate commentary based on race state
         if (progress < 0.25) {
-            // Early race - identify leader
+            // Early race
             if (secondPlace && Math.abs(leader.position - secondPlace.position) < 30) {
-                commentary = `${leader.userName} and ${secondPlace.userName} are absolutely inseparable out of the gates.`;
+                commentary = `${leader.userName} and ${secondPlace.userName} neck and neck!`;
             } else {
-                commentary = `${leader.userName} has stolen an early lead and is looking very comfortable.`;
+                commentary = `${leader.userName} takes the early lead!`;
             }
         } else if (progress < 0.5) {
-            // Mid race - track position changes
+            // Mid race
             if (this.previousLeader && this.previousLeader !== leader.userName) {
-                commentary = `A change at the front — ${leader.userName} has moved through on the inside, with ${this.previousLeader} now dropping back.`;
+                commentary = `${leader.userName} moves to the front!`;
             } else if (secondPlace && Math.abs(leader.position - secondPlace.position) < 40) {
-                commentary = `${secondPlace.userName} is closing the gap on ${leader.userName}, this one is far from settled.`;
+                commentary = `${secondPlace.userName} closing in fast!`;
             } else {
-                commentary = `${leader.userName} is dictating the pace out in front, looking smooth and controlled.`;
+                commentary = `${leader.userName} out in front!`;
             }
         } else if (progress < 0.75) {
-            // Late mid race - building tension
+            // Late mid race
             const gap = secondPlace ? leader.position - secondPlace.position : 100;
             if (gap < 30) {
-                commentary = `Remarkably close racing — ${leader.userName} just a whisker in front of ${secondPlace.userName}.`;
+                commentary = `Too close to call!`;
             } else if (gap < 60) {
-                commentary = `${secondPlace.userName} is eating into the lead, ${leader.userName} will need to respond.`;
+                commentary = `${secondPlace.userName} is gaining ground!`;
             } else {
-                commentary = `${leader.userName} has opened up a real advantage now, pulling clear of the field.`;
+                commentary = `${leader.userName} pulling away!`;
             }
         } else {
-            // Final stretch - maximum drama
+            // Final stretch
             if (secondPlace && Math.abs(leader.position - secondPlace.position) < 35) {
-                commentary = `Neck and neck as they come to the line — ${leader.userName} and ${secondPlace.userName} giving absolutely everything.`;
+                commentary = `Photo finish! ${leader.userName} and ${secondPlace.userName}!`;
             } else if (leader.isWinner) {
-                commentary = `${leader.userName} is driving hard for the finish line and this looks like it could be their race.`;
+                commentary = `${leader.userName} for the line!`;
             } else {
-                commentary = `Into the final stretch now and anything can still happen here.`;
+                commentary = `Anyone's race now!`;
             }
         }
 
