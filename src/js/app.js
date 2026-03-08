@@ -103,6 +103,10 @@ const App = {
             if (commentaryToggle) {
                 commentaryToggle.checked = Storage.getSetting('commentaryEnabled');
             }
+            const voiceCommentaryToggle = document.getElementById('voice-commentary-toggle');
+            if (voiceCommentaryToggle) {
+                voiceCommentaryToggle.checked = Storage.getSetting('voiceCommentaryEnabled');
+            }
         }
     },
 
@@ -725,6 +729,7 @@ const App = {
         const darkModeToggle = document.getElementById('dark-mode-toggle');
         const soundToggle = document.getElementById('sound-toggle');
         const commentaryToggle = document.getElementById('commentary-toggle');
+        const voiceCommentaryToggle = document.getElementById('voice-commentary-toggle');
         const resetApp = document.getElementById('reset-app');
 
         // Load current settings
@@ -735,6 +740,7 @@ const App = {
         darkModeToggle.checked = settings.darkMode;
         soundToggle.checked = settings.soundEnabled;
         commentaryToggle.checked = settings.commentaryEnabled;
+        if (voiceCommentaryToggle) voiceCommentaryToggle.checked = settings.voiceCommentaryEnabled;
 
         // Spin duration
         spinDurationSlider.addEventListener('input', (e) => {
@@ -774,6 +780,16 @@ const App = {
         commentaryToggle.addEventListener('change', (e) => {
             Storage.setSetting('commentaryEnabled', e.target.checked);
         });
+
+        // Voice commentary
+        if (voiceCommentaryToggle) {
+            voiceCommentaryToggle.addEventListener('change', (e) => {
+                Storage.setSetting('voiceCommentaryEnabled', e.target.checked);
+                if (!e.target.checked) {
+                    window.speechSynthesis.cancel();
+                }
+            });
+        }
 
         // Winner effect
         winnerEffect.addEventListener('change', (e) => {

@@ -24,7 +24,8 @@ const Storage = {
         soundEnabled: true,
         darkMode: false,
         winnerEffect: 'confetti',
-        commentaryEnabled: true
+        commentaryEnabled: true,
+        voiceCommentaryEnabled: false
     },
 
     // Color palette

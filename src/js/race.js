@@ -305,6 +305,7 @@ const Race = {
             if (commentaryText) {
                 commentaryText.textContent = 'And they\'re off!';
             }
+            this.speakCommentary("And they're off!");
         }
 
         // Reset commentary state
@@ -504,7 +505,27 @@ const Race = {
                 commentaryText.textContent = commentary;
                 commentaryText.style.opacity = '1';
             }, 200);
+
+            this.speakCommentary(commentary);
         }
+    },
+
+    /**
+     * Speak commentary text using Web Speech API
+     */
+    speakCommentary(text) {
+        if (!Storage.getSetting('voiceCommentaryEnabled')) return;
+        if (!window.speechSynthesis) return;
+
+        // Strip emojis for cleaner speech
+        const cleanText = text.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim();
+        if (!cleanText) return;
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.15;
+        utterance.pitch = 1.1;
+        window.speechSynthesis.speak(utterance);
     },
 
     /**
@@ -553,6 +574,7 @@ const Race = {
                     commentaryText.style.fontSize = '26px';
                     commentaryText.style.fontWeight = '900';
                     commentaryText.style.opacity = '1';
+                    this.speakCommentary(`${this.selectedUser.name} wins the race!`);
                 }, 200);
             }
         }
@@ -642,6 +664,9 @@ const Race = {
 
         this.isRacing = false;
         this.horses = [];
+
+        // Stop any voice commentary
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
 
         // Reset commentary state
         this.lastCommentaryUpdate = 0;
