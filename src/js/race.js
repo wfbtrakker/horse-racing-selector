@@ -13,6 +13,7 @@ class HorseState {
         this.userName = userName;
         this.color = color;
         this.isWinner = isWinner;
+        this.hasFallen = false;
         this.position = 50; // Start position (pixels from left)
         this.raceDistance = raceDistance;
         this.totalDuration = totalDuration;
@@ -173,6 +174,11 @@ const Race = {
     previousPositions: [],
     britishMaleVoice: null,
 
+    // Fall state
+    fallenHorseUserId: null,  // userId of the horse that will fall (null = none)
+    fallTime: -1,             // elapsed ms when the fall triggers
+    hasFallen: false,         // true once fall has been triggered this race
+
     /**
      * Initialize race module
      */
@@ -279,7 +285,7 @@ const Race = {
     },
 
     /**
-     * Create horse graphic using emoji
+     * Create horse graphic using SVG shapes with animated parts
      */
     createHorseSVG(user, x, y, index) {
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -293,13 +299,82 @@ const Race = {
         const innerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         innerGroup.setAttribute('class', 'race-horse');
 
-        // Use racing horse emoji with colored circle background
-        const horseSVG = `
-            <!-- Colored circle background for user identification -->
-            <circle cx="0" cy="0" r="20" fill="${user.color}" opacity="0.85" stroke="#fff" stroke-width="2"/>
+        const uc = user.color; // horse body color = user color
+        const dk = '#1a1a1a'; // dark accents: mane, tail, hooves, nostril
+        const hf = '#111111'; // hooves
 
-            <!-- Horse emoji as text element (flipped to face right) -->
-            <text x="0" y="0" font-size="38" text-anchor="middle" dominant-baseline="central" transform="scale(-1, 1)">🐎</text>
+        // Horse is colored entirely in the user's color.
+        // Dark accents (mane, tail, hooves, eye) provide contrast regardless of user color.
+        //
+        // IMPORTANT - two-group wrapper pattern for animated parts:
+        //   Outer <g transform="translate(x,y)"> handles position via SVG attribute only.
+        //   Inner <g class="horse-..."> is the CSS animation target and has NO SVG transform
+        //   attribute. This prevents the CSS animation from overriding the position translate.
+        const horseSVG = `
+            <g class="horse-figure">
+
+                <!-- Tail: outer <g> positions; inner <g> is CSS-animated -->
+                <g transform="translate(-15, 3)">
+                    <g class="horse-tail-group">
+                        <path d="M0,0 C-2,5 -4,10 -2,14 C-1,17 2,15 1,11 C0,8 1,3 3,0"
+                              fill="none" stroke="${dk}" stroke-width="3.5" stroke-linecap="round"/>
+                    </g>
+                </g>
+
+                <!-- Back legs: outer <g> positions; inner <g> is CSS-animated -->
+                <g transform="translate(-13, 9)">
+                    <g class="horse-back-leg-b">
+                        <rect x="-2.5" y="0" width="5" height="13" rx="1.5" fill="${uc}"/>
+                        <rect x="-3" y="12" width="6" height="3.5" rx="1" fill="${hf}"/>
+                    </g>
+                </g>
+                <g transform="translate(-8, 9)">
+                    <g class="horse-back-leg-a">
+                        <rect x="-2.5" y="0" width="5" height="13" rx="1.5" fill="${uc}"/>
+                        <rect x="-3" y="12" width="6" height="3.5" rx="1" fill="${hf}"/>
+                    </g>
+                </g>
+
+                <!-- Horse body -->
+                <ellipse cx="0" cy="2" rx="16" ry="8" fill="${uc}"/>
+
+                <!-- Front legs: outer <g> positions; inner <g> is CSS-animated -->
+                <g transform="translate(8, 9)">
+                    <g class="horse-front-leg-b">
+                        <rect x="-2.5" y="0" width="5" height="13" rx="1.5" fill="${uc}"/>
+                        <rect x="-3" y="12" width="6" height="3.5" rx="1" fill="${hf}"/>
+                    </g>
+                </g>
+                <g transform="translate(13, 9)">
+                    <g class="horse-front-leg-a">
+                        <rect x="-2.5" y="0" width="5" height="13" rx="1.5" fill="${uc}"/>
+                        <rect x="-3" y="12" width="6" height="3.5" rx="1" fill="${hf}"/>
+                    </g>
+                </g>
+
+                <!-- Neck -->
+                <polygon points="8,-1 15,1 18,-8 12,-9" fill="${uc}"/>
+
+                <!-- Mane -->
+                <path d="M9,-2 C8,-5 11,-7 14,-8 C12,-9 8,-7 8,-5 C7,-4 7,-2 9,-2" fill="${dk}"/>
+
+                <!-- Head: outer <g> positions; inner <g> is CSS-animated -->
+                <g transform="translate(13, -9)">
+                    <g class="horse-head-group">
+                        <ellipse cx="7" cy="0" rx="9" ry="5" fill="${uc}" transform="rotate(-20, 7, 0)"/>
+                        <!-- Ear outer -->
+                        <polygon points="3,-3 5,-8 8,-3" fill="${uc}"/>
+                        <!-- Ear inner line -->
+                        <line x1="4" y1="-4" x2="5" y2="-6.5" stroke="${dk}" stroke-width="1.5" stroke-linecap="round"/>
+                        <!-- Eye -->
+                        <circle cx="11" cy="-1" r="2" fill="${dk}"/>
+                        <circle cx="11.7" cy="-1.7" r="0.7" fill="white"/>
+                        <!-- Nostril -->
+                        <ellipse cx="16" cy="3" rx="1.8" ry="1.2" fill="${dk}"/>
+                    </g>
+                </g>
+
+            </g>
         `;
 
         innerGroup.innerHTML = horseSVG;
@@ -389,6 +464,21 @@ const Race = {
             );
         });
 
+        // Determine if a horse will fall this race
+        this.fallenHorseUserId = null;
+        this.fallTime = -1;
+        this.hasFallen = false;
+        if (Storage.getSetting('horseCanFall') && this.users.length >= 2) {
+            // ~40% chance any given race has a fall
+            if (Math.random() < 0.4) {
+                const nonWinners = this.horses.filter(h => !h.isWinner);
+                const victim = nonWinners[Math.floor(Math.random() * nonWinners.length)];
+                this.fallenHorseUserId = victim.userId;
+                // Fall happens between 20% and 65% through the race
+                this.fallTime = this.duration * (0.2 + Math.random() * 0.45);
+            }
+        }
+
         // Reset all horse positions and add racing animation
         this.horses.forEach((horse, index) => {
             const horseContainer = document.getElementById(`horse-${horse.userId}`);
@@ -399,6 +489,7 @@ const Race = {
                 // Add galloping animation to inner horse element
                 const innerHorse = horseContainer.querySelector('.race-horse');
                 if (innerHorse) {
+                    innerHorse.classList.remove('fallen');
                     innerHorse.classList.add('racing');
                 }
             }
@@ -435,11 +526,19 @@ const Race = {
             return;
         }
 
+        // Trigger horse fall if the time has come
+        if (!this.hasFallen && this.fallenHorseUserId !== null && elapsedTime >= this.fallTime) {
+            this.triggerHorseFall(this.fallenHorseUserId);
+            this.hasFallen = true;
+        }
+
         // Update all horse positions
         const trackHeight = 600;
         const laneHeight = trackHeight / this.users.length;
 
         this.horses.forEach((horse, index) => {
+            if (horse.hasFallen) return; // fallen horses don't move
+
             horse.update(elapsedTime, deltaTime);
 
             const horseElement = document.getElementById(`horse-${horse.userId}`);
@@ -642,6 +741,38 @@ const Race = {
     },
 
     /**
+     * Trigger a horse fall: stop the horse and play the fall-over animation
+     */
+    triggerHorseFall(userId) {
+        // Mark the HorseState as fallen so it stops moving
+        const horseState = this.horses.find(h => h.userId === userId);
+        if (horseState) horseState.hasFallen = true;
+
+        // Switch CSS classes: remove 'racing', add 'fallen'
+        const horseContainer = document.getElementById(`horse-${userId}`);
+        if (horseContainer) {
+            const innerHorse = horseContainer.querySelector('.race-horse');
+            if (innerHorse) {
+                innerHorse.classList.remove('racing');
+                innerHorse.classList.add('fallen');
+            }
+        }
+
+        // Optional commentary mention
+        if (Storage.getSetting('commentaryEnabled') && horseState) {
+            const commentaryText = document.getElementById('commentary-text');
+            if (commentaryText) {
+                commentaryText.style.opacity = '0';
+                setTimeout(() => {
+                    commentaryText.textContent = `Oh no! ${horseState.userName} is down!`;
+                    commentaryText.style.opacity = '1';
+                }, 200);
+            }
+            this.speakCommentary(`Oh no! ${horseState.userName} is down!`);
+        }
+    },
+
+    /**
      * Get random user index, preventing same as last selection
      * COPIED EXACTLY from wheel.js:363-381
      */
@@ -704,6 +835,11 @@ const Race = {
         this.isRacing = false;
         this.horses = [];
 
+        // Reset fall state
+        this.fallenHorseUserId = null;
+        this.fallTime = -1;
+        this.hasFallen = false;
+
         // Stop any voice commentary
         if (window.speechSynthesis) window.speechSynthesis.cancel();
 
@@ -718,11 +854,11 @@ const Race = {
             commentaryDisplay.classList.add('hidden');
         }
 
-        // Remove racing animation from all horses
+        // Remove racing/fallen animation from all horses
         const horsesGroup = document.querySelector('#horses');
         if (horsesGroup) {
             horsesGroup.querySelectorAll('.race-horse').forEach(horse => {
-                horse.classList.remove('racing');
+                horse.classList.remove('racing', 'fallen');
             });
         }
 

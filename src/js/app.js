@@ -771,6 +771,7 @@ const App = {
         const soundToggle = document.getElementById('sound-toggle');
         const commentaryToggle = document.getElementById('commentary-toggle');
         const voiceCommentaryToggle = document.getElementById('voice-commentary-toggle');
+        const horseFallToggle = document.getElementById('horse-fall-toggle');
         const resetApp = document.getElementById('reset-app');
 
         // Load current settings
@@ -782,6 +783,7 @@ const App = {
         soundToggle.checked = settings.soundEnabled;
         commentaryToggle.checked = settings.commentaryEnabled;
         if (voiceCommentaryToggle) voiceCommentaryToggle.checked = settings.voiceCommentaryEnabled;
+        if (horseFallToggle) horseFallToggle.checked = settings.horseCanFall;
 
         // Spin duration
         spinDurationSlider.addEventListener('input', (e) => {
@@ -829,6 +831,13 @@ const App = {
                 if (!e.target.checked) {
                     window.speechSynthesis.cancel();
                 }
+            });
+        }
+
+        // Random horse fall toggle
+        if (horseFallToggle) {
+            horseFallToggle.addEventListener('change', (e) => {
+                Storage.setSetting('horseCanFall', e.target.checked);
             });
         }
 
